@@ -18,14 +18,7 @@ def main():
         dest='verbose',
         action='store_true',
         help='enable verbose logging')
-    parser.add_argument(
-        '--sudo',
-        '-s',
-        dest='sudo',
-        action='store_true',
-        help='sudo to the application user when running jstat')
     args = parser.parse_args()
 
-    client = JStatmonClient(
-        sudo=args.sudo, verbose=args.verbose, environment=args.environment)
+    client = JStatmonClient(verbose=args.verbose, environment=args.environment)
     client.run()

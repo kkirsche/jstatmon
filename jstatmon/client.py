@@ -6,10 +6,10 @@ time of the request.
 '''
 
 from jstatmon.log import setup_logger
-from time import time
-from os import access, X_OK, pathsep, environ
+from os import access, X_OK, pathsep, environ, setuid, setgid
 from os.path import isfile, split, join
 from subprocess import Popen, PIPE
+from pwd import getpwnam
 from logging import DEBUG, INFO
 import shlex
 
@@ -22,7 +22,7 @@ class JStatmonClient(object):
         logger (:obj:`logging.Logger`): A logging engine
     '''
 
-    def __init__(self, sudo=False, verbose=False, environment='prod'):
+    def __init__(self, verbose=False, environment='prod'):
         '''Initialize a new jstatmon client.
 
         Args:
@@ -33,7 +33,6 @@ class JStatmonClient(object):
         else:
             self.logger = setup_logger(INFO)
         self.environment = environment
-        self.sudo = sudo
 
         # metrics from https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jstat.html
         # Replace jstat colums titles with more explicit ones
@@ -258,6 +257,14 @@ class JStatmonClient(object):
 
             return None
 
+    def _demote(self, user_uid, user_gid):
+
+        def result():
+            setgid(user_gid)
+            setuid(user_uid)
+
+        return result
+
     def _jstat_details(self, pid_cmd_user_tuple):
         self.logger.debug(('application=jstatmon environment={env} '
                            'msg=start JStatmonClient._jstat_details').format(
@@ -304,22 +311,18 @@ class JStatmonClient(object):
                     metric_maps = self.metric_maps_class
                 else:
                     self.logger.error('unknown option {opt}'.format(opt=option))
-                if self.sudo:
-                    cmd_array = shlex.split(
-                        'sudo -u {user} {jstat} {opt} {pid}'.format(
-                            jstat=jstat_executable,
-                            opt=option,
-                            user=pid_cmd_user_tuple[2],
-                            pid=pid_cmd_user_tuple[0]))
-                else:
-                    cmd_array = shlex.split('{jstat} {opt} {pid}'.format(
-                        jstat=jstat_executable,
-                        opt=option,
-                        user=pid_cmd_user_tuple[2],
-                        pid=pid_cmd_user_tuple[0]))
+
+                cmd_array = shlex.split('{jstat} {opt} {pid}'.format(
+                    jstat=jstat_executable,
+                    opt=option,
+                    pid=pid_cmd_user_tuple[0]))
+
+                record = getpwnam(pid_cmd_user_tuple[2])
+
                 p = Popen(
                     cmd_array,
                     universal_newlines=True,
+                    preexec_fn=self._demote(record.pw_uid, record.pw_gid),
                     shell=False,
                     stdout=PIPE,
                     stderr=PIPE)
