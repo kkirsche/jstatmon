@@ -13,5 +13,5 @@ pip install -U jstatmon
 ```
 #!/bin/sh
 
-/usr/bin/jstatmon --sudo
+/usr/bin/jstatmon
 ```

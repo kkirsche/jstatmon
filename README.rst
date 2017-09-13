@@ -17,4 +17,4 @@ Usage
 
     #!/bin/sh
 
-    /usr/bin/jstatmon --sudo
+    /usr/bin/jstatmon

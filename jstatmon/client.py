@@ -279,38 +279,41 @@ class JStatmonClient(object):
                 metric_maps = None
                 if option == '-gc':
                     self.logger.debug(('application=jstatmon environment={env} '
-                                       'msg=-gc option identified').format(
+                                       'msg="-gc option identified"').format(
                                            env=self.environment))
                     metric_maps = self.metric_maps_gc
                 elif option == '-gccapacity':
                     self.logger.debug(
                         ('application=jstatmon environment={env} '
-                         'msg=-gccapacity option identified').format(
+                         'msg="-gccapacity option identified"').format(
                              env=self.environment))
                     metric_maps = self.metric_maps_gccapacity
                 elif option == '-gcnew':
                     self.logger.debug(('application=jstatmon environment={env} '
-                                       'msg=-gcnew option identified').format(
+                                       'msg="-gcnew option identified"').format(
                                            env=self.environment))
                     metric_maps = self.metric_maps_gcnew
                 elif option == '-compiler':
                     self.logger.debug(
                         ('application=jstatmon environment={env} '
-                         'msg=-compiler option identified').format(
+                         'msg="-compiler option identified"').format(
                              env=self.environment))
                     metric_maps = self.metric_maps_compiler
                 elif option == '-gccause':
-                    self.logger.debug(('application=jstatmon environment={env} '
-                                       'msg=-gccause option identified').format(
-                                           env=self.environment))
+                    self.logger.debug(
+                        ('application=jstatmon environment={env} '
+                         'msg="-gccause option identified"').format(
+                             env=self.environment))
                     metric_maps = self.metric_maps_gccause
                 elif option == '-class':
                     self.logger.debug(('application=jstatmon environment={env} '
-                                       'msg=-class option identified').format(
+                                       'msg="-class option identified"').format(
                                            env=self.environment))
                     metric_maps = self.metric_maps_class
                 else:
-                    self.logger.error('unknown option {opt}'.format(opt=option))
+                    self.logger.error(('application=jstatmon environment={env} '
+                                       'msg="unknown option {opt}"').format(
+                                           env=self.environment, opt=option))
 
                 cmd_array = shlex.split('{jstat} {opt} {pid}'.format(
                     jstat=jstat_executable,
@@ -343,42 +346,43 @@ class JStatmonClient(object):
                     titles[3] = "Bytes_column4"
 
                 metrics = [
-                    'application=jstatmon', 'environment={env}'.format(
+                    'application="jstatmon"', 'environment="{env}"'.format(
                         env=self.environment),
-                    'option={opt}'.format(opt=option), 'user={user}'.format(
-                        user=pid_cmd_user_tuple[2]), 'pid={pid}'.format(
-                            pid=pid_cmd_user_tuple[0]), 'command={cmd}'.format(
-                                cmd=pid_cmd_user_tuple[1])
+                    'option="{opt}"'.format(opt=option), 'user="{user}"'.format(
+                        user=pid_cmd_user_tuple[2]), 'pid="{pid}"'.format(
+                            pid=pid_cmd_user_tuple[0]),
+                    'command="{cmd}"'.format(cmd=pid_cmd_user_tuple[1])
                 ]
                 for position, title in enumerate(titles):
                     if title in metric_maps:
                         key = '{opt}_{title}'.format(
                             opt=option[1:], title=metric_maps[title])
-                        metrics.append('{key}={value}'.format(
+                        metrics.append('{key}="{value}"'.format(
                             key=key, value=values_all[position]))
                     else:
                         self.logger.warning(
-                            ('application=jstatmon environment={env} '
-                             'msg=item not found in metric map '
-                             'option={opt} title={title} '
-                             'metric_map={mm}').format(
+                            ('application="jstatmon" environment="{env}" '
+                             'msg="item not found in metric map" '
+                             'option="{opt}" title="{title}" '
+                             'metric_map="{mm}"').format(
                                  env=self.environment,
                                  opt=option,
                                  title=title,
                                  mm=metric_maps),)
                 stats.append(metrics)
-            self.logger.debug(('application=jstatmon environment={env} '
-                               'msg=end JStatmonClient._pid_to_command').format(
-                                   env=self.environment))
+            self.logger.debug(
+                ('application=jstatmon environment={env} '
+                 'msg="end JStatmonClient._pid_to_command"').format(
+                     env=self.environment))
             return stats
         else:
             self.logger.error(('application=jstatmon environment={env} '
-                               'msg=failed to find jstat executable').format(
+                               'msg="failed to find jstat executable"').format(
                                    env=self.environment))
 
             return None
         self.logger.debug(('application=jstatmon environment={env} '
-                           'msg=end JStatmonClient._jstat_details').format(
+                           'msg="end JStatmonClient._jstat_details"').format(
                                env=self.environment))
 
     def _interpret_jstat(self, metrics):
@@ -394,30 +398,31 @@ class JStatmonClient(object):
             2. Identify the process name for each PID.
 
         '''
-        self.logger.debug(('application=jstatmon environment={env} '
-                           'msg=start JStatmonClient.run').format(
+        self.logger.debug(('application="jstatmon" environment="{env}" '
+                           'msg="start JStatmonClient.run"').format(
                                env=self.environment))
 
         pids = self._get_java_pids()
         if pids:
-            self.logger.debug(('application=jstatmon environment={env} '
-                               'msg=retrieved java pids pids={pids}').format(
-                                   pids=', '.join(pids), env=self.environment))
+            self.logger.debug(
+                ('application="jstatmon" environment="{env}" '
+                 'msg="retrieved java pids" pids="{pids}"').format(
+                     pids=', '.join(pids), env=self.environment))
             pid_cmd = []
             for pid in pids:
                 item = self._pid_to_command(pid=pid)
                 if item:
                     pid_cmd.append(item)
                 else:
-                    self.logger.warning(('application=jstatmon '
-                                         'environment={env} '
-                                         'msg=Failed to find command / user '
-                                         'for PID {pid}').format(
+                    self.logger.warning(('application="jstatmon" '
+                                         'environment="{env}" '
+                                         'msg="Failed to find command / user '
+                                         'for PID {pid}"').format(
                                              env=self.environment, pid=pid))
             for pc in pid_cmd:
                 metrics = self._jstat_details(pc)
                 for metric in metrics:
                     self._interpret_jstat(metrics=metric)
-        self.logger.debug(('application=jstatmon environment={e} '
-                           'msg=end JStatmonClient.run').format(
+        self.logger.debug(('application="jstatmon" environment="{e}" '
+                           'msg="end JStatmonClient.run"').format(
                                e=self.environment))
